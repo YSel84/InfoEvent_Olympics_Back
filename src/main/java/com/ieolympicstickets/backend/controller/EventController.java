@@ -2,6 +2,7 @@ package com.ieolympicstickets.backend.controller;
 
 import com.ieolympicstickets.backend.model.Event;
 import com.ieolympicstickets.backend.service.EventService;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,6 +13,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/events")
 public class EventController {
+
     private final EventService eventService;
 
     public EventController(EventService eventService) {
