@@ -17,6 +17,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.List;
+
 @Configuration
 public class SecurityConfig {
 
@@ -49,8 +51,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
         //Allowed origins
-        cfg.addAllowedOrigin("http://localhost:8081"); //local test
-        cfg.addAllowedOrigin("https://infoeventolympics.netlify.app/");
+        cfg.setAllowedOrigins(List.of("http://localhost:8081","https://infoeventolympics.netlify.app"));
         //Allowed methods
         cfg.addAllowedMethod("GET");
         cfg.addAllowedMethod("POST");
