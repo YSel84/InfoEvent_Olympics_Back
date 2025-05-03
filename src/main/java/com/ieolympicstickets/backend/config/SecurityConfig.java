@@ -17,6 +17,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -34,6 +35,9 @@ public class SecurityConfig {
     @Value("${FRONT_PASSWORD}")
     private String frontPassword;
 
+    //CORS origins (from env or default in local)
+    @Value("${cors.allowed-origins}")
+    private String[] allowedOrigins;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -51,7 +55,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
         //Allowed origins
-        cfg.setAllowedOrigins(List.of("http://localhost:8081","https://infoeventolympics.netlify.app"));
+        cfg.setAllowedOrigins(Arrays.asList(allowedOrigins));
         //Allowed methods
         cfg.addAllowedMethod("GET");
         cfg.addAllowedMethod("POST");
