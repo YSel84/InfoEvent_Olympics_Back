@@ -18,6 +18,7 @@ public class Event {
     private String location;
     private String date;
     private String description;
+    private boolean featured;
 
     // Getters & Setters done via Lombok
 
