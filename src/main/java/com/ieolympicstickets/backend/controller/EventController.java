@@ -1,7 +1,9 @@
 package com.ieolympicstickets.backend.controller;
 
 import com.ieolympicstickets.backend.model.Event;
+import com.ieolympicstickets.backend.model.Offer;
 import com.ieolympicstickets.backend.service.EventService;
+import com.ieolympicstickets.backend.service.OfferService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,9 +15,12 @@ import java.util.Optional;
 @RequestMapping("/api/events")
 public class EventController {
     private final EventService eventService;
+    private final OfferService offerService;
 
-    public EventController(EventService eventService) {
+    public EventController(EventService eventService, OfferService offerService) {
+
         this.eventService = eventService;
+        this.offerService = offerService;
     }
 
     @GetMapping
@@ -40,15 +45,15 @@ public class EventController {
         return event.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/{id}/offers")
+    public ResponseEntity<List<Offer>> getOffersByEvent(@PathVariable Long id) {
+        List<Offer> offers=offerService.findOffersByEvent(id);
+        return ResponseEntity.ok(offers);
+    }
+
     //
     @PostMapping
     public ResponseEntity<Event> createEvent(@RequestBody Event event) {
-        System.out.println(">>> Reçu Event:");
-        System.out.println(" - title: " + event.getTitle());
-        System.out.println(" - imageUrl: " + event.getImageUrl());
-        System.out.println(" - location: " + event.getLocation());
-        System.out.println(" - date: " + event.getDate());
-        System.out.println(" - description: " + event.getDescription());
         Event saved = eventService.saveEvent(event);
         return ResponseEntity.ok(saved);
     }
