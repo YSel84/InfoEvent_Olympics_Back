@@ -31,8 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+/src/main/resources/application-local.properties
 /src/main/resources/application-test.properties
 /.env
-/reverse_proxy.conf
 /IEOlympicsTicketing_backend.jar
 /IEOlympicsTicketing_backend.zip
