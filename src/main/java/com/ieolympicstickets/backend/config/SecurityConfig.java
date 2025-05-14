@@ -88,6 +88,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/offers/**").hasRole("ADMIN")
                         //Cart validation for atuhenticated users
                         .requestMatchers(HttpMethod.POST,"/api/cart/validate").authenticated()
+                        //actuator, just in case
+                        .requestMatchers("/actuator/**").hasRole("ADMIN")
                         //admin console
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         //rest
