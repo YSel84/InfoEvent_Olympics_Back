@@ -106,6 +106,7 @@ public class SecurityConfig {
                         // lecture publique
                         .requestMatchers(HttpMethod.GET,
                                 "/api/offers/**", "/api/events/**", "/api/events", "/api/offers").permitAll()
+                        .requestMatchers("/error").permitAll()
 
                         // CRUD événements/offres → ADMIN only
                         .requestMatchers(HttpMethod.POST,
