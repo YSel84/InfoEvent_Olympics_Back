@@ -137,7 +137,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
-        // on utilise strict origins ici ; pour wildcard, passe à setAllowedOriginPatterns(...)
+
         cfg.setAllowedOrigins(Arrays.asList(allowedOrigins));
         cfg.setAllowedMethods(List.of(
                 "GET","POST","PUT","PATCH","DELETE","OPTIONS"));
