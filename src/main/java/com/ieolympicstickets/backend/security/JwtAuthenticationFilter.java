@@ -4,6 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
@@ -19,9 +21,10 @@ import java.util.stream.Collectors;
 /**
  * JWT filter that authenticates requests based on Bearer tokens
  */
-@Order(Ordered.HIGHEST_PRECEDENCE)
+
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
     private final JwtService jwtService;
 
     public JwtAuthenticationFilter(JwtService jwtService) {
@@ -33,12 +36,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
-        // MODIFICATION: Retrieve Authorization header
+        // Log the incoming Authorization header
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+        logger.debug(">>> JwtAuthenticationFilter: Authorization header = {}", authHeader);
 
-        // MODIFICATION: If no header or not Bearer, skip authentication here
+        // If header present and starts with Bearer, attempt token validation
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
+            logger.debug(">>> JwtAuthenticationFilter: extracted token = {}", token);
+
             if (jwtService.validateToken(token)) {
                 String email = jwtService.extractSubject(token);
                 List<String> roles = jwtService.extractRoles(token);
@@ -47,10 +53,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         .collect(Collectors.toList());
                 var auth = new UsernamePasswordAuthenticationToken(email, null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(auth);
+                logger.debug(">>> JwtAuthenticationFilter: Authentication set for {} with roles {}", email, roles);
+            } else {
+                logger.debug(">>> JwtAuthenticationFilter: Token validation failed");
             }
         }
 
-        // Continue filter chain
+        // Continue the filter chain
         filterChain.doFilter(request, response);
     }
 
@@ -59,16 +68,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
         String method = request.getMethod();
 
-        // MODIFICATION: Skip this filter for public GET endpoints
-        if ("GET".equalsIgnoreCase(method) && (
-                path.equals("/api/events") || path.startsWith("/api/events/") ||
-                        path.equals("/api/offers") || path.startsWith("/api/offers/")
-        )) {
+        // Toujours autoriser le pré-vol CORS
+        if ("OPTIONS".equalsIgnoreCase(method)) {
             return true;
         }
 
-        // MODIFICATION: Always skip for authentication endpoints
-        if (path.startsWith("/api/auth/")) {
+        // Ne PAS filtrer login & register (elles sont permitAll)
+        if (   path.equals("/api/auth/login")
+                || path.equals("/api/auth/register")) {
+            return true;
+        }
+
+        // bypasser la lecture publique sur  entités events/offers
+        if ("GET".equalsIgnoreCase(method) && (
+                path.equals("/api/events") || path.startsWith("/api/events/")
+                        || path.equals("/api/offers") || path.startsWith("/api/offers/")
+        )) {
             return true;
         }
 

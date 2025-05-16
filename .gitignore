@@ -36,3 +36,5 @@ build/
 /.env
 /IEOlympicsTicketing_backend.jar
 /IEOlympicsTicketing_backend.zip
+/.platform.zip
+/IEOlympics.zip

@@ -4,6 +4,7 @@ import com.ieolympicstickets.backend.security.JwtAuthenticationFilter;
 import com.ieolympicstickets.backend.security.JwtService;
 import com.ieolympicstickets.backend.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -83,6 +84,21 @@ public class SecurityConfig {
         return new JwtAuthenticationFilter(jwtService);
     }
 
+
+    /**
+     * Empêche Spring Boot d'enregistrer ce filtre en tant que Filter global.
+     */
+    @Bean
+    public FilterRegistrationBean<JwtAuthenticationFilter> disableJwtAutoRegistration(
+            JwtAuthenticationFilter filter
+    ) {
+        FilterRegistrationBean<JwtAuthenticationFilter> reg = new FilterRegistrationBean<>(filter);
+        reg.setEnabled(false);
+        return reg;
+    }
+
+
+
     // ─── CHAÎNE DE SÉCURITÉ ───────────────────────────────────────────────────────
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -117,6 +133,11 @@ public class SecurityConfig {
                                 "/api/events/**", "/api/offers/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE,
                                 "/api/events/**", "/api/offers/**").hasRole("ADMIN")
+                        // 1) Création / lecture / modification de panier autorisées sans login
+                        .requestMatchers(HttpMethod.POST,   "/api/cart",           "/api/cart/items").permitAll()
+                        .requestMatchers(HttpMethod.GET,    "/api/cart/**").permitAll()
+                        .requestMatchers(HttpMethod.PATCH,  "/api/cart/items/**").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/api/cart/items/**").permitAll()
 
                         // validation panier → user authentifié
                         .requestMatchers(HttpMethod.POST,
@@ -142,7 +163,9 @@ public class SecurityConfig {
         cfg.setAllowedOrigins(Arrays.asList(allowedOrigins));
         cfg.setAllowedMethods(List.of(
                 "GET","POST","PUT","PATCH","DELETE","OPTIONS"));
-        cfg.setAllowedHeaders(List.of("*"));
+        //cfg.setAllowedHeaders(List.of("*"));
+        cfg.setAllowedHeaders(List.of("Authorization","Content-Type","X-Session-Id"));
+        cfg.setExposedHeaders(List.of("Authorization"));
         cfg.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource src =
