@@ -17,7 +17,7 @@ public class JwtService {
 
     @Value("${jwt.secret}")
     private String base64Secret;
-    @Value("${jwt.validityMs}")
+    @Value("${JWT_EXPIRATION_MS}")
     private long validityMs;
 
     private SecretKey key;
