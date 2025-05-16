@@ -47,7 +47,7 @@ public class JwtService {
      * Validate Token (signature & expiration)
      * */
     public boolean validateToken(String token) {
-        System.out.println(">>> JwtService – secret = [" + base64Secret + "]");
+
         try {
             Jwts.parserBuilder()
                     .setSigningKey(key)

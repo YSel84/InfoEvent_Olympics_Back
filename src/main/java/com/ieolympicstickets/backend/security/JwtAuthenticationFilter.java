@@ -6,8 +6,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -36,14 +34,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
-        // Log the incoming Authorization header
+
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-        logger.debug(">>> JwtAuthenticationFilter: Authorization header = {}", authHeader);
 
         // If header present and starts with Bearer, attempt token validation
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-            logger.debug(">>> JwtAuthenticationFilter: extracted token = {}", token);
 
             if (jwtService.validateToken(token)) {
                 String email = jwtService.extractSubject(token);
@@ -53,7 +49,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         .collect(Collectors.toList());
                 var auth = new UsernamePasswordAuthenticationToken(email, null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(auth);
-                logger.debug(">>> JwtAuthenticationFilter: Authentication set for {} with roles {}", email, roles);
             } else {
                 logger.debug(">>> JwtAuthenticationFilter: Token validation failed");
             }
@@ -91,52 +86,3 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 }
 
-
-
-/**
-package com.ieolympicstickets.backend.security;
-
-
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.HttpHeaders;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.filter.OncePerRequestFilter;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
-
-public class JwtAuthenticationFilter extends OncePerRequestFilter {
-
-    private final JwtService jwtService;
-
-    public JwtAuthenticationFilter(JwtService jwtService) {
-        this.jwtService = jwtService;
-    }
-
-    @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
-        throws ServletException, IOException {
-        String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-        if(authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            if(jwtService.validateToken(token)) {
-                String email = jwtService.extractSubject(token);
-                List<String> roles = jwtService.extractRoles(token);
-                var authorities = roles.stream()
-                        .map(SimpleGrantedAuthority::new)
-                        .collect(Collectors.toList());
-                var auth = new UsernamePasswordAuthenticationToken(email, null, authorities);
-                SecurityContextHolder.getContext().setAuthentication(auth);
-            }
-        }
-        filterChain.doFilter(request, response);
-    }
-} */
