@@ -41,18 +41,6 @@ public class SecurityConfig {
     @Value("${JWT_EXPIRATION_MS}")
     private long jwtExpirationMs; // fallback 1h
 
-    // ─── USERS ADMIN / FRONT ─────────────────────────────────────────────────────
-    @Value("${ADMIN_USERNAME}")
-    private String adminUsername;
-
-    @Value("${ADMIN_PASSWORD}")
-    private String adminPassword;
-
-    @Value("${FRONT_USERNAME}")
-    private String frontUsername;
-
-    @Value("${FRONT_PASSWORD}")
-    private String frontPassword;
 
     // ─── CORS ORIGINS (depuis application.properties) ───────────────────────────
     // application.properties doit contenir :
