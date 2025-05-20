@@ -41,19 +41,6 @@ public class SecurityConfig {
     @Value("${JWT_EXPIRATION_MS}")
     private long jwtExpirationMs; // fallback 1h
 
-    // ─── USERS ADMIN / FRONT ─────────────────────────────────────────────────────
-    @Value("${ADMIN_USERNAME}")
-    private String adminUsername;
-
-    @Value("${ADMIN_PASSWORD}")
-    private String adminPassword;
-
-    @Value("${FRONT_USERNAME}")
-    private String frontUsername;
-
-    @Value("${FRONT_PASSWORD}")
-    private String frontPassword;
-
     // ─── CORS ORIGINS (depuis application.properties) ───────────────────────────
     // application.properties doit contenir :
     // cors.allowed-origins=${ALLOWED_ORIGINS:http://localhost:8081}
@@ -139,12 +126,35 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH,  "/api/cart/items/**").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/cart/items/**").permitAll()
 
+                        //Endpoint for Employee - ticket scanning
+                        .requestMatchers(HttpMethod.POST,    "/api/tickets/scan").hasRole("EMPLOYEE")
+
                         // validation panier → user authentifié
                         .requestMatchers(HttpMethod.POST,
                                 "/api/cart/validate").authenticated()
 
                         // Actuator → ADMIN only
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
+
+                        // OpenAPI & Swagger UI (staging) → accès libre
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/docs",
+                                "/docs/**"
+                        ).permitAll()
+
+                        // Production : restricted :
+                        /*
+                        .requestMatchers(
+                            "/v3/api-docs/**",
+                            "/swagger-ui.html",
+                            "/swagger-ui/**",
+                            "/docs",
+                            "/docs/**"
+                        ).hasRole("API_DOCS_READER")
+                        */
 
                         // tout le reste → authentifié par défaut
                         .anyRequest().authenticated()
