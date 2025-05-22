@@ -133,6 +133,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST,
                                 "/api/cart/validate").authenticated()
 
+                        // Lecture de l’historique des commandes
+                        .requestMatchers(HttpMethod.GET, "/api/orders", "/api/orders/*")
+                        .authenticated()
+
                         // Actuator → ADMIN only
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
 

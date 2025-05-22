@@ -1,6 +1,7 @@
 package com.ieolympicstickets.backend.service;
 
 import com.ieolympicstickets.backend.controller.CartController.ValidateCartResponse;
+import com.ieolympicstickets.backend.exceptions.PaymentException;
 import com.ieolympicstickets.backend.model.*;
 import com.ieolympicstickets.backend.repository.CartRepository;
 import com.ieolympicstickets.backend.repository.OfferRepository;
@@ -8,6 +9,7 @@ import com.ieolympicstickets.backend.repository.TicketRepository;
 import com.stripe.exception.StripeException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.ieolympicstickets.backend.service.PaymentService;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -21,23 +23,30 @@ public class CartService {
 
     private final CartRepository cartRepository;
     private final OfferRepository offerRepository;
-    private final StripeService stripeService;
+    //private final StripeService stripeService;
     private final TicketRepository ticketRepository;
+    private final PaymentService paymentService;
+    private final OrderService orderService;
 
     public CartService(
             CartRepository cartRepository,
             OfferRepository offerRepository,
-            StripeService stripeService,
-            TicketRepository ticketRepository
+            //StripeService stripeService,
+            TicketRepository ticketRepository,
+            PaymentService paymentService,
+            OrderService orderService
+
    ) {
         this.cartRepository = cartRepository;
         this.offerRepository = offerRepository;
-        this.stripeService = stripeService;
+        //this.stripeService = stripeService;
         this.ticketRepository = ticketRepository;
+        this.paymentService  = paymentService;
+        this.orderService = orderService;
     }
 
-    @Transactional(readOnly = true)
-    public ValidateCartResponse validateCart(Long cartId, User user) {
+    @Transactional
+    public ValidateCartResponse validateCart(Long cartId, User user, String paymentToken) {
         Cart cart = cartRepository.findById(cartId)
                 .orElseThrow(() -> new IllegalArgumentException("Panier introuvable : " + cartId));
 
@@ -71,6 +80,8 @@ public class CartService {
             return new ValidateCartResponse(false, total, errors, List.of());
         }
 
+
+        /**
         // Simulate payment via Stripe mock
         try {
             stripeService.pay(
@@ -80,7 +91,18 @@ public class CartService {
         } catch (StripeException e) {
             errors.add("Erreur de paiement : " + e.getMessage());
             return new ValidateCartResponse(false, total, errors, List.of());
+        }*/
+
+        //Mock payment service
+        try {
+            paymentService.pay(total, paymentToken);
+        } catch (PaymentException e) {
+            errors.add("Erreur de paiement : " + e.getMessage());
+            return new ValidateCartResponse(false, total, errors, List.of(e.getMessage()));
         }
+
+        //Create an order
+        Order order = orderService.createOrder(user, total);
 
         // Generate tickets and QR hashes
         String accountKey = user.getUserKey();
@@ -93,7 +115,7 @@ public class CartService {
                 String qrHash = accountKey + purchaseKey;
                 Ticket ticket = Ticket.builder()
                         .user(user)
-                        .cart(cart)
+                        .order(order)
                         .offer(offer)
                         .purchaseKey(purchaseKey)
                         .qrHash(qrHash)
@@ -103,6 +125,9 @@ public class CartService {
                 qrHashes.add(qrHash);
             }
         }
+        //empty cart after purchase
+        cart.getItems().clear();
+        cartRepository.save(cart);
 
         return new ValidateCartResponse(true, total, errors, qrHashes);
     }
@@ -140,24 +165,6 @@ public class CartService {
             return cartRepository.save(newCart);
         }
     }
-
-
-
-    /**
-    //@Transactional
-    public Cart getOrCreateCart(String sessionId, User user) {
-        // si user connecté, on cherche par user ; sinon par sessionId
-        List<Cart> existing = (user != null)
-                ? cartRepository.findByUser(user).map(List::of).orElse(List.of())
-                : cartRepository.findBySessionId(sessionId);
-
-        if (!existing.isEmpty()) {
-            return existing.get(0);
-        }
-        // pas de panier existant → on en crée un
-        Cart cart = new Cart(sessionId, user);
-        return cartRepository.save(cart);
-    }*/
 
     @Transactional(readOnly = true)
     public Optional<Cart> getCart(String sessionId, User user) {

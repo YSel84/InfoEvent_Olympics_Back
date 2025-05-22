@@ -53,7 +53,11 @@ public class CartController {
             //load User if needed
             User user = userService.findUserByEmail(email);
             //ask service
-            ValidateCartResponse resp = cartService.validateCart(request.cartId(), user);
+            //paymentToken (mock)
+            ValidateCartResponse resp = cartService.validateCart(
+                    request.cartId(),
+                    user,
+                    request.paymentToken());
             return ResponseEntity.ok(resp);
     }
 
@@ -139,7 +143,9 @@ public class CartController {
     //Dto
     public static record ValidateCartRequest(
             @Schema(description = "Identifiant du panier à valider")
-            Long cartId
+            Long cartId,
+            @Schema(description = "Jeton de paiement mock")
+            String paymentToken //new for mock
     ) {}
     public static record ValidateCartResponse(
             @Schema(description = "Statut de la validation")
