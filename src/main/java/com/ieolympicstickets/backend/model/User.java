@@ -55,6 +55,9 @@ public class User {
 
     @PrePersist
     public void prePersist() {
+        Instant now = Instant.now();
+        this.createdAt=now;
+        this.updatedAt=now;
         //checks if there is a unique key when insert
         if(userKey == null)
         {

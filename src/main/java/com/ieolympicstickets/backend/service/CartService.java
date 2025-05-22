@@ -1,19 +1,21 @@
 package com.ieolympicstickets.backend.service;
 
 import com.ieolympicstickets.backend.controller.CartController.ValidateCartResponse;
-import com.ieolympicstickets.backend.model.Cart;
-import com.ieolympicstickets.backend.model.CartItem;
-import com.ieolympicstickets.backend.model.Offer;
-import com.ieolympicstickets.backend.model.User;
+import com.ieolympicstickets.backend.exceptions.PaymentException;
+import com.ieolympicstickets.backend.model.*;
 import com.ieolympicstickets.backend.repository.CartRepository;
 import com.ieolympicstickets.backend.repository.OfferRepository;
+import com.ieolympicstickets.backend.repository.TicketRepository;
+import com.stripe.exception.StripeException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.ieolympicstickets.backend.service.PaymentService;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 
 @Service
@@ -21,14 +23,30 @@ public class CartService {
 
     private final CartRepository cartRepository;
     private final OfferRepository offerRepository;
+    //private final StripeService stripeService;
+    private final TicketRepository ticketRepository;
+    private final PaymentService paymentService;
+    private final OrderService orderService;
 
-    public CartService(CartRepository cartRepository, OfferRepository offerRepository) {
+    public CartService(
+            CartRepository cartRepository,
+            OfferRepository offerRepository,
+            //StripeService stripeService,
+            TicketRepository ticketRepository,
+            PaymentService paymentService,
+            OrderService orderService
+
+   ) {
         this.cartRepository = cartRepository;
         this.offerRepository = offerRepository;
+        //this.stripeService = stripeService;
+        this.ticketRepository = ticketRepository;
+        this.paymentService  = paymentService;
+        this.orderService = orderService;
     }
 
-    @Transactional(readOnly = true)
-    public ValidateCartResponse validateCart(Long cartId, User user) {
+    @Transactional
+    public ValidateCartResponse validateCart(Long cartId, User user, String paymentToken) {
         Cart cart = cartRepository.findById(cartId)
                 .orElseThrow(() -> new IllegalArgumentException("Panier introuvable : " + cartId));
 
@@ -36,7 +54,8 @@ public class CartService {
             return new ValidateCartResponse(
                     false,
                     BigDecimal.ZERO,
-                    List.of("Vous n'êtes pas autorisé à valider ce panier.")
+                    List.of("Vous n'êtes pas autorisé à valider ce panier."),
+                    List.of()
             );
         }
 
@@ -57,7 +76,60 @@ public class CartService {
             total = total.add(offer.getPrice().multiply(BigDecimal.valueOf(qty)));
         }
 
-        return new ValidateCartResponse(errors.isEmpty(), total, errors);
+        if (!errors.isEmpty()) {
+            return new ValidateCartResponse(false, total, errors, List.of());
+        }
+
+
+        /**
+        // Simulate payment via Stripe mock
+        try {
+            stripeService.pay(
+                    total.multiply(BigDecimal.valueOf(100)).intValue(),
+                    "eur"
+            );
+        } catch (StripeException e) {
+            errors.add("Erreur de paiement : " + e.getMessage());
+            return new ValidateCartResponse(false, total, errors, List.of());
+        }*/
+
+        //Mock payment service
+        try {
+            paymentService.pay(total, paymentToken);
+        } catch (PaymentException e) {
+            errors.add("Erreur de paiement : " + e.getMessage());
+            return new ValidateCartResponse(false, total, errors, List.of(e.getMessage()));
+        }
+
+        //Create an order
+        Order order = orderService.createOrder(user, total);
+
+        // Generate tickets and QR hashes
+        String accountKey = user.getUserKey();
+        List<String> qrHashes = new ArrayList<>();
+        for (CartItem item : cart.getItems()) {
+            Offer offer = offerRepository.findById(item.getOffer().getOfferId())
+                    .orElseThrow();
+            for (int i = 0; i < item.getQuantity(); i++) {
+                String purchaseKey = UUID.randomUUID().toString();
+                String qrHash = accountKey + purchaseKey;
+                Ticket ticket = Ticket.builder()
+                        .user(user)
+                        .order(order)
+                        .offer(offer)
+                        .purchaseKey(purchaseKey)
+                        .qrHash(qrHash)
+                        .used(false)
+                        .build();
+                ticketRepository.save(ticket);
+                qrHashes.add(qrHash);
+            }
+        }
+        //empty cart after purchase
+        cart.getItems().clear();
+        cartRepository.save(cart);
+
+        return new ValidateCartResponse(true, total, errors, qrHashes);
     }
 
     @Transactional
@@ -93,24 +165,6 @@ public class CartService {
             return cartRepository.save(newCart);
         }
     }
-
-
-
-    /**
-    //@Transactional
-    public Cart getOrCreateCart(String sessionId, User user) {
-        // si user connecté, on cherche par user ; sinon par sessionId
-        List<Cart> existing = (user != null)
-                ? cartRepository.findByUser(user).map(List::of).orElse(List.of())
-                : cartRepository.findBySessionId(sessionId);
-
-        if (!existing.isEmpty()) {
-            return existing.get(0);
-        }
-        // pas de panier existant → on en crée un
-        Cart cart = new Cart(sessionId, user);
-        return cartRepository.save(cart);
-    }*/
 
     @Transactional(readOnly = true)
     public Optional<Cart> getCart(String sessionId, User user) {
@@ -161,52 +215,4 @@ public class CartService {
         cartRepository.delete(guestCart);
         return userCart;
     }
-
-
-/**
-    //@Transactional
-    public Cart mergeCarts(String sessionId, User user) {
-        // 1) on récupère (ou crée) le panier de l'user, en lui passant bien le sessionId courant
-        Cart userCart = getOrCreateCart(sessionId, user);
-
-        // 2) on récupère le panier guest s'il existe
-        Optional<Cart> guestOpt = getCart(sessionId, null);
-        if (guestOpt.isPresent()) {
-            Cart guestCart = guestOpt.get();
-
-            // si ce n'est pas déjà le même panier
-            if (!guestCart.getId().equals(userCart.getId())) {
-                // 3) pour chaque item du guest, on cherche un équivalent dans userCart
-                for (CartItem guestItem : guestCart.getItems()) {
-                    Offer offer = guestItem.getOffer();
-                    int qty = guestItem.getQuantity();
-
-                    // a) si l'offre existe déjà dans userCart, on incrémente
-                    CartItem existing = userCart.getItems().stream()
-                            .filter(ci -> ci.getOffer().getOfferId().equals(offer.getOfferId()))
-                            .findFirst()
-                            .orElse(null);
-
-                    if (existing != null) {
-                        existing.setQuantity(existing.getQuantity() + qty);
-
-                        // b) sinon on crée un NOUVEL item (jamais ré-utiliser guestItem)
-                    } else {
-                        CartItem copy = new CartItem();
-                        copy.setOffer(offer);
-                        copy.setQuantity(qty);
-                        userCart.addItem(copy);
-                    }
-                }
-
-                // 4) on sauvegarde d'abord userCart pour persister les nouveaux items
-                userCart = cartRepository.save(userCart);
-
-                // 5) puis on supprime proprement le panier guest
-                cartRepository.delete(guestCart);
-            }
-        }
-        return userCart;
-    }*/
-
 }
