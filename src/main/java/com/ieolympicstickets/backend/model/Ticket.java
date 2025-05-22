@@ -37,7 +37,7 @@ public class Ticket {
     private Offer offer;
 
     @Column(nullable = false)
-    private boolean used = false;
+    private boolean used ;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
