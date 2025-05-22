@@ -41,7 +41,6 @@ public class SecurityConfig {
     @Value("${JWT_EXPIRATION_MS}")
     private long jwtExpirationMs; // fallback 1h
 
-
     // ─── CORS ORIGINS (depuis application.properties) ───────────────────────────
     // application.properties doit contenir :
     // cors.allowed-origins=${ALLOWED_ORIGINS:http://localhost:8081}
@@ -127,12 +126,39 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH,  "/api/cart/items/**").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/cart/items/**").permitAll()
 
+                        //Endpoint for Employee - ticket scanning
+                        .requestMatchers(HttpMethod.POST,    "/api/tickets/scan").hasRole("EMPLOYEE")
+
                         // validation panier → user authentifié
                         .requestMatchers(HttpMethod.POST,
                                 "/api/cart/validate").authenticated()
 
+                        // Lecture de l’historique des commandes
+                        .requestMatchers(HttpMethod.GET, "/api/orders", "/api/orders/*")
+                        .authenticated()
+
                         // Actuator → ADMIN only
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
+
+                        // OpenAPI & Swagger UI (staging) → accès libre
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/docs",
+                                "/docs/**"
+                        ).permitAll()
+
+                        // Production : restricted :
+                        /*
+                        .requestMatchers(
+                            "/v3/api-docs/**",
+                            "/swagger-ui.html",
+                            "/swagger-ui/**",
+                            "/docs",
+                            "/docs/**"
+                        ).hasRole("API_DOCS_READER")
+                        */
 
                         // tout le reste → authentifié par défaut
                         .anyRequest().authenticated()
