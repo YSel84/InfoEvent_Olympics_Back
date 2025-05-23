@@ -109,7 +109,7 @@ public class TicketController {
     public ResponseEntity<ScanResponse> scanTicket(
             @RequestBody ScanRequest req
     ) {
-        boolean success = ticketService.scanTicket(req.getTicketId());
+        boolean success = ticketService.scanByHash(req.getQrHash());
         if (success) {
             return ResponseEntity.ok(new ScanResponse("SCANNED"));
         } else {
@@ -148,10 +148,10 @@ public class TicketController {
     }
 
     public static class ScanRequest {
-        @Schema(description = "ID du billet", example = "123")
-        private Long ticketId;
-        public Long getTicketId() { return ticketId; }
-        public void setTicketId(Long ticketId) { this.ticketId = ticketId; }
+        @Schema(description = "QR hash du billet")
+        private String qrHash;
+        public String getQrHash() { return qrHash; }
+        public void setQrHash(String qrHash) { this.qrHash = qrHash; }
     }
 
     public static class ScanResponse {

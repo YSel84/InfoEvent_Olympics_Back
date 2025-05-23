@@ -39,17 +39,11 @@ public class TicketService {
                         .orElseThrow(() -> new AccessDeniedException("Ticket not yours"));
         }
 
-        /**
-         * Scans a ticket: marks it as used if not already.
-         *
-         * @param ticketId ID of the ticket to scan
-         * @return true if successfully scanned, false if already used
-         * @throws TicketNotFoundException if the ticket does not exist
-         */
-        @Transactional // Assure la gestion de la transaction
-        public boolean scanTicket(Long ticketId) {
-                Ticket ticket = ticketRepository.findById(ticketId)
-                        .orElseThrow(() -> new TicketNotFoundException(ticketId));
+        //QR scan
+        @Transactional
+        public boolean scanByHash(String qrHash) {
+                Ticket ticket = ticketRepository.findByQrHash(qrHash)
+                        .orElseThrow(() -> new TicketNotFoundException("QR invalide : " + qrHash));
 
                 if (ticket.isUsed()) {
                         return false;

@@ -82,8 +82,6 @@ public class SecurityConfig {
         return reg;
     }
 
-
-
     // CHAÎNE DE SÉCURITÉ
     @Bean
     public SecurityFilterChain securityFilterChain(

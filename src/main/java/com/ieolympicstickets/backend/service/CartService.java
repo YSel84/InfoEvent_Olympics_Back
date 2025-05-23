@@ -208,7 +208,7 @@ public class CartService {
             }
         }
 
-        // --- persister puis supprimer l’ancien panier invité ---
+        // persister puis supprimer l’ancien panier invité
         userCart = cartRepository.save(userCart);
         cartRepository.delete(guestCart);
         return userCart;

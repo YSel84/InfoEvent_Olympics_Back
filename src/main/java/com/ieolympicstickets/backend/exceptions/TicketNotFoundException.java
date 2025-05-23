@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(HttpStatus.NOT_FOUND)
 public class TicketNotFoundException extends RuntimeException {
-    public TicketNotFoundException(Long ticketId) {
-        super("Ticket not found with id " + ticketId);
+    public TicketNotFoundException(String qrHash) {
+        super("Ticket not found with QR hash" + qrHash);
     }
 }
