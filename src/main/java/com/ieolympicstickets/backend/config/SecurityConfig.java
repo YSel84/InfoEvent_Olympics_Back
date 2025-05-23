@@ -140,16 +140,17 @@ public class SecurityConfig {
                         // Actuator → ADMIN only
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
 
-                        // OpenAPI & Swagger UI (staging) → accès libre
+                        // OpenAPI & Swagger UI (staging) → closed when deployed
+                        /*
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/docs",
                                 "/docs/**"
-                        ).permitAll()
+                        ).permitAll()*/
 
-                        // Production : restricted :
+                        // OpenAPI deploy : role not implemented yet
                         /*
                         .requestMatchers(
                             "/v3/api-docs/**",
