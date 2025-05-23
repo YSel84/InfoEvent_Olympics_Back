@@ -16,6 +16,7 @@ import java.time.Instant;
 public class Ticket {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ticket_id")
     private Long id;
 
     @Column(name = "purchase_key", nullable = false, unique = true)

@@ -6,7 +6,6 @@ import com.ieolympicstickets.backend.model.*;
 import com.ieolympicstickets.backend.repository.CartRepository;
 import com.ieolympicstickets.backend.repository.OfferRepository;
 import com.ieolympicstickets.backend.repository.TicketRepository;
-import com.stripe.exception.StripeException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.ieolympicstickets.backend.service.PaymentService;
@@ -39,7 +38,6 @@ public class CartService {
    ) {
         this.cartRepository = cartRepository;
         this.offerRepository = offerRepository;
-        //this.stripeService = stripeService;
         this.ticketRepository = ticketRepository;
         this.paymentService  = paymentService;
         this.orderService = orderService;
@@ -135,13 +133,13 @@ public class CartService {
     @Transactional
     public Cart getOrCreateCart(String sessionId, User user) {
         if (user != null) {
-            // --- 1) tenter le panier existant de l’utilisateur ---
+            // Try existing cart for existing user
             Optional<Cart> optUserCart = cartRepository.findByUser(user);
             if (optUserCart.isPresent()) {
                 return optUserCart.get();
             }
 
-            // --- 2) adopter un panier invité existant (même sessionId) ---
+            //merge a guest cart (même sessionId)
             if (sessionId != null) {
                 List<Cart> guestCarts = cartRepository.findBySessionId(sessionId);
                 if (!guestCarts.isEmpty()) {
@@ -151,7 +149,7 @@ public class CartService {
                 }
             }
 
-            // --- 3) enfin, vraiment créer un nouveau panier pour cet user ---
+            // Create a new cart
             Cart newCart = new Cart(sessionId, user);
             return cartRepository.save(newCart);
 
