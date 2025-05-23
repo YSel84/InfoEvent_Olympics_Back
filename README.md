@@ -19,18 +19,21 @@ To compile a .jar : mvn clean package -DskipTests
 
 
 **3/ Variables**
-
 Here are the environment variables you will have to set. Use a .env or your IDE config tools.
 
 Database related: 
 
-DATABASE_URL -> where your DB is running, must include "jdbc:mysql: etc"
-DB_USERNAME
-DB_PASSWORD
+DATABASE_URL -> where your DB is running, must include "jdbc:mysql: etc";
+
+DB_USERNAME;
+
+DB_PASSWORD;
 
 Security related: 
-JWT_SECRET
-JWT_EXPIRATION_MS
+JWT_SECRET;
+
+JWT_EXPIRATION_MS;
+
 ALLOWED_ORIGINS -> will default to local port 8081, set in app.properties
 
 
