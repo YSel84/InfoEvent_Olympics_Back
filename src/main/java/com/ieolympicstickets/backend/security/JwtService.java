@@ -1,5 +1,6 @@
 package com.ieolympicstickets.backend.security;
 
+import com.ieolympicstickets.backend.model.Role;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
@@ -12,12 +13,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.function.Function;
 
+
 @Service
 public class JwtService {
 
     @Value("${jwt.secret}")
     private String base64Secret;
-    @Value("${jwt.validityMs}")
+    @Value("${JWT_EXPIRATION_MS}")
     private long validityMs;
 
     private SecretKey key;
@@ -29,6 +31,9 @@ public class JwtService {
     }
     /**
      * Generate JWT HMAC-SHA256
+     *
+     * @param subject l'identifiant principal (email)
+     *  * @param roles   liste des rôles (ex. "USER", "EMPLOYEE", "ADMIN")
      ** */
     public String generateToken(String subject, List<String> roles) {
         Instant now = Instant.now();

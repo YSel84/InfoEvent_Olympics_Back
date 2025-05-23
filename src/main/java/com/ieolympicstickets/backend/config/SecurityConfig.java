@@ -34,27 +34,24 @@ import java.util.List;
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
-    // ─── JWT ─────────────────────────────────────────────────────────────────────
+    // JWT
     @Value("${JWT_SECRET}")
     private String jwtSecret;
 
     @Value("${JWT_EXPIRATION_MS}")
     private long jwtExpirationMs; // fallback 1h
 
-
-    // ─── CORS ORIGINS (depuis application.properties) ───────────────────────────
-    // application.properties doit contenir :
-    // cors.allowed-origins=${ALLOWED_ORIGINS:http://localhost:8081}
+    // CORS ORIGINS (depuis application.properties or env)
     @Value("${cors.allowed-origins}")
     private String[] allowedOrigins;
 
-    // ─── ENCODER ─────────────────────────────────────────────────────────────────
+    // ENCODER
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // ─── AUTHENTICATION MANAGER (JPA UserService) ────────────────────────────────
+    // AUTHENTICATION MANAGER (JPA UserService)
     @Bean
     public AuthenticationManager authenticationManager(
             UserService userService,
@@ -66,7 +63,7 @@ public class SecurityConfig {
         return new ProviderManager(provider);
     }
 
-    // ─── JWT SERVICE & FILTER ─────────────────────────────────────────────────────
+    // JWT SERVICE & FILTER
        @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(JwtService jwtService) {
         return new JwtAuthenticationFilter(jwtService);
@@ -85,9 +82,7 @@ public class SecurityConfig {
         return reg;
     }
 
-
-
-    // ─── CHAÎNE DE SÉCURITÉ ───────────────────────────────────────────────────────
+    // CHAÎNE DE SÉCURITÉ
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
@@ -102,12 +97,12 @@ public class SecurityConfig {
                         ex.authenticationEntryPoint(
                                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .authorizeHttpRequests(auth -> auth
-                        // auth publique
+                        // auth est publique
                         .requestMatchers(HttpMethod.POST,
                                 "/api/auth/login", "/api/auth/register").permitAll()
                         .requestMatchers("/api/auth/me").authenticated()
 
-                        // lecture publique
+                        // lecture publique des events
                         .requestMatchers(HttpMethod.GET,
                                 "/api/offers/**", "/api/events/**", "/api/events", "/api/offers").permitAll()
                         .requestMatchers("/error").permitAll()
@@ -121,18 +116,50 @@ public class SecurityConfig {
                                 "/api/events/**", "/api/offers/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE,
                                 "/api/events/**", "/api/offers/**").hasRole("ADMIN")
-                        // 1) Création / lecture / modification de panier autorisées sans login
+
+                        // Création / lecture / modification de panier autorisées sans login
                         .requestMatchers(HttpMethod.POST,   "/api/cart",           "/api/cart/items").permitAll()
                         .requestMatchers(HttpMethod.GET,    "/api/cart/**").permitAll()
                         .requestMatchers(HttpMethod.PATCH,  "/api/cart/items/**").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/cart/items/**").permitAll()
 
+                        //Endpoint for Employee - ticket scanning
+                        .requestMatchers(HttpMethod.POST,    "/api/tickets/scan").hasRole("EMPLOYEE")
+
                         // validation panier → user authentifié
                         .requestMatchers(HttpMethod.POST,
                                 "/api/cart/validate").authenticated()
 
+                        // Lecture de l’historique des commandes -> user authentifié
+                        .requestMatchers(HttpMethod.GET, "/api/orders", "/api/orders/*")
+                        .authenticated()
+
+                        //lecture des billets -> user authentifié
+                        .requestMatchers(HttpMethod.GET, "/api/tickets/**").authenticated()
+
                         // Actuator → ADMIN only
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
+
+                        // OpenAPI & Swagger UI (staging) → closed when deployed
+                        /*
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/docs",
+                                "/docs/**"
+                        ).permitAll()*/
+
+                        // OpenAPI deploy : role not implemented yet
+                        /*
+                        .requestMatchers(
+                            "/v3/api-docs/**",
+                            "/swagger-ui.html",
+                            "/swagger-ui/**",
+                            "/docs",
+                            "/docs/**"
+                        ).hasRole("API_DOCS_READER")
+                        */
 
                         // tout le reste → authentifié par défaut
                         .anyRequest().authenticated()
@@ -143,7 +170,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // ─── CONFIGURATION CORS ───────────────────────────────────────────────────────
+    //CONFIGURATION CORS
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();

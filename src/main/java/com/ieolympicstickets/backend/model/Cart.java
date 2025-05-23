@@ -22,7 +22,6 @@ public class Cart {
         this.user = user;
     }
 
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "cart_id")
@@ -44,8 +43,6 @@ public class Cart {
      * */
     @OneToMany(mappedBy = "cart", cascade= CascadeType.ALL, orphanRemoval = true)
     private List <CartItem> items = new ArrayList<>();
-
-
 
 
     //Convenience
