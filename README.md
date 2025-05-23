@@ -19,7 +19,6 @@ To compile a .jar : mvn clean package -DskipTests
 
 
 **3/ Variables**
-
 Here are the environment variables you will have to set. Use a .env or your IDE config tools.
 
 Database related: 
@@ -34,5 +33,9 @@ JWT_EXPIRATION_MS
 ALLOWED_ORIGINS -> will default to local port 8081, set in app.properties
 
 
+**3/Documentation**
+Work in progress... Basic SWAGGER/OpenAPI support. 
+Comments not yet Javadoc-y-fied. 
 
-
+**4/Test**
+To-do... 
