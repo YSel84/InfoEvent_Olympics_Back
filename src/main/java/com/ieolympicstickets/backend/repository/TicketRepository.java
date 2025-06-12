@@ -16,6 +16,8 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     Optional<Ticket> findByQrHash(String qrHash);
 
+    long countByOfferOfferId(Long offerId);
+
 
     // Si besoin de trier par date de l'événement :
     // List<Ticket> findByUserOrderByOfferEventEventDateTime(User user);
