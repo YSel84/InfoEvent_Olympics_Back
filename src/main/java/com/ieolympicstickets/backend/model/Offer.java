@@ -1,6 +1,7 @@
 package com.ieolympicstickets.backend.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,7 +19,16 @@ public class Offer {
     @ManyToOne(optional = false)
     @JoinColumn(name = "event_id", nullable = false)
     private Event event;
+
+    @NotBlank
+    @Size(min = 1, max = 100)
     private String name;
+
+    @NotNull
+    @DecimalMin("0.0")
     private BigDecimal price;
+
+    @NotNull
+    @Min(0)
     private Integer stock;
 }
